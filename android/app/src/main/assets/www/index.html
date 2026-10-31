@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Meer Facts Maker</title>
+<style>
+/* ================= FACTS MODULE CSS (scoped: .fm-*) ================= */
+*{box-sizing:border-box}
+body{margin:0;background:#0d1526;color:#eef2f7;font-family:system-ui,Roboto,Arial,sans-serif}
+.fm-wrap{max-width:760px;margin:0 auto;padding:14px 12px 60px}
+.fm-h1{font-size:25px;margin:6px 0 2px;text-align:center}
+.fm-sub{text-align:center;color:#9fb4d8;font-size:14px;margin:0 0 14px}
+.fm-card{background:#16233d;border:1px solid #24406e;border-radius:14px;padding:14px;margin:0 0 14px}
+.fm-card h2{font-size:17px;margin:0 0 8px}
+.fm-note{color:#9fb4d8;font-size:13px;line-height:1.45}
+.fm-btn{display:block;width:100%;padding:14px;border:0;border-radius:11px;background:#1f6feb;color:#fff;
+  font-size:16px;font-weight:700;margin:8px 0;cursor:pointer}
+.fm-btn:active{opacity:.8}
+.fm-btn.green{background:#1d9e57}
+.fm-btn.orange{background:#e07b1f}
+.fm-btn.grey{background:#33507e}
+.fm-btn:disabled{opacity:.45}
+.fm-ta{width:100%;min-height:170px;background:#0b1120;color:#fff;border:1px solid #33507e;border-radius:10px;
+  padding:10px;font-size:15px;line-height:1.5}
+.fm-prog{height:12px;background:#0b1120;border-radius:7px;overflow:hidden;margin:8px 0;display:none}
+.fm-prog>div{height:100%;width:0%;background:#1d9e57;transition:width .3s}
+.fm-status{font-size:14px;color:#cfe0f5;min-height:20px;line-height:1.5;white-space:pre-wrap}
+.fm-scene{display:flex;gap:10px;background:#0b1120;border:1px solid #33507e;border-radius:10px;padding:8px;margin:8px 0;align-items:center}
+.fm-scene.bad{border-color:#c0392b}
+.fm-scene img{width:64px;height:96px;object-fit:cover;border-radius:7px;background:#222}
+.fm-scene .fm-grow{flex:1;min-width:0}
+.fm-scene .fm-line{font-size:13.5px;line-height:1.4}
+.fm-scene .fm-meta{font-size:11.5px;color:#9fb4d8;margin-top:3px;word-break:break-all}
+.fm-mini{padding:8px 12px;border:0;border-radius:8px;background:#33507e;color:#fff;font-size:13.5px;font-weight:700;cursor:pointer}
+.fm-mini:active{opacity:.8}
+video{width:100%;border-radius:10px;background:#000}
+.fm-ok{color:#58d68d}.fm-err{color:#ff8a75}
+</style>
+</head>
+<body>
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- FACTS MODULE — START (self-contained; MEER app me lift ho sakta) -->
+<!-- Online bank (SHARED dono apps): scripts-bank.json @ factsmaker  -->
+<!-- repo — app har dafa FRESH fetch karta hai (cache-bust), bank    -->
+<!-- kabhi APK ke andar primary source NAHI. Used-tracking per-     -->
+<!-- device localStorage me rehta hai (kabhi repeat nahi).           -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div class="fm-wrap" id="factsModule">
+  <div class="fm-h1">🎬 Meer Facts Maker</div>
+  <p class="fm-sub">Free facts videos — koi credit nahi, koi account nahi.<br>Script likho ya bank se lo, baqi sab khud ho jayega.</p>
+
+  <div class="fm-card">
+    <h2>🗣️ Step 0 — Awaz (Voice Pack)</h2>
+    <div class="fm-status" id="fmVoiceStatus">Awaz check ho rahi hai…</div>
+    <button class="fm-btn orange" id="fmPackBtn" style="display:none">⬇️ Awaz Pack Download Karo (~126 MB, sirf pehli dafa)</button>
+    <div class="fm-prog" id="fmVoiceProg"><div></div></div>
+    <p class="fm-note">Awaz phone ke andar banti hai — internet sirf pack download aur scenes ke liye chahiye.</p>
+  </div>
+
+  <div class="fm-card">
+    <h2>📝 Step 1 — Script</h2>
+    <textarea class="fm-ta" id="fmScript" placeholder="Har line = aik fact = aik scene.&#10;Misal:&#10;An octopus has three hearts.&#10;Honey never spoils."></textarea>
+    <div class="fm-status" id="fmLineCount"></div>
+    <button class="fm-btn" id="fmBankBtn">📥 Nayi Script Lo (Online Bank se — kabhi repeat nahi)</button>
+    <button class="fm-btn grey" id="fmSampleBtn">⭐ Ready Facts Lo (5 facts — pehla test)</button>
+    <p class="fm-note">60 lines tak — lambi script = lambi video (60 lines ≈ 5 minute). Apni likhi hui script par bank wala qaida nahi lagta.</p>
+  </div>
+
+  <div class="fm-card">
+    <h2>🔍 Step 2 — Scenes Dhoondo</h2>
+    <button class="fm-btn" id="fmSearchBtn">🔍 Har Line Ke Liye Scene Dhoondo</button>
+    <div class="fm-status" id="fmSearchStatus"></div>
+    <div id="fmScenes"></div>
+    <p class="fm-note">Scenes free archives (Wikimedia + NASA) se aate hain. Pasand na aye to <b>Badlo</b> dabao — agla scene aa jayega. Jis line ka scene na mile, wo laal ho jayegi — video us ke baghair NAHI banegi.</p>
+  </div>
+
+  <div class="fm-card">
+    <h2>🎬 Step 3 — Video Banao</h2>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0 2px">
+      <div style="flex:1;font-size:15.5px">Subtitles (neeche wali likhai):</div>
+      <button class="fm-mini" id="fmSubToggle" style="min-width:86px;padding:11px">ON ✅</button>
+    </div>
+    <p class="fm-note">OFF karne se video bilkul saaf banegi — koi likhai nahi jalegi. (Jo likhai asal purani footage ke andar pehle se hai, wo kisi video se nahi hat sakti.)</p>
+    <div style="display:flex;align-items:center;gap:10px;margin:10px 0 2px">
+      <div style="flex:1;font-size:15.5px">Watermark (neeche-dayen konay me naam):</div>
+      <button class="fm-mini" id="fmWmToggle" style="min-width:86px;padding:11px">ON ✅</button>
+    </div>
+    <input id="fmWmText" type="text" value="@toylanddaily" maxlength="40" style="width:100%;box-sizing:border-box;padding:12px;font-size:16px;border-radius:10px;border:1px solid #3a4a6b;background:#0d1526;color:#fff;margin:4px 0" />
+    <p class="fm-note">Watermark har video par asal me jalega — video banne ke baad app khud check kar ke batati hai ke watermark laga ya nahi.</p>
+    <button class="fm-btn green" id="fmRenderBtn" style="font-size:19px;padding:17px">🎬 VIDEO BANAO</button>
+    <div class="fm-prog" id="fmRenderProg"><div></div></div>
+    <div class="fm-status" id="fmRenderStatus"></div>
+    <div id="fmResult"></div>
+  </div>
+  <p class="fm-note" style="text-align:center">Meer Facts Maker v1.0 — scenes: Wikimedia Commons + NASA (free) • awaz: Kokoro (app ke andar)</p>
+</div>
+
+<script>
+/* ================= FACTS MODULE JS (namespace: FactsApp) ================= */
+(function(){
+"use strict";
+/* MARKER: FACTS_MODULE_BANK_V1 */
+var BANK_URL = "https://raw.githubusercontent.com/Hamzaagsm/factsmaker/main/scripts-bank.json";
+var MAX_LINES = 60; /* MARKER: FACTS_MAX_LINES_60 */
+var SAMPLE = [
+"Get ready — five facts that sound fake, but every one is true.",
+"An octopus has three hearts, and two of them stop beating when it swims.",
+"Honey never spoils — pots found in ancient Egyptian tombs were still good to eat.",
+"Sea otters hold hands while they sleep, so the waves cannot carry them away.",
+"The footprints astronauts left on the Moon can stay there for millions of years."
+];
+var STOP = {the:1,a:1,an:1,is:1,are:1,was:1,were:1,of:1,to:1,in:1,on:1,for:1,and:1,or:1,it:1,its:1,that:1,this:1,with:1,from:1,by:1,at:1,as:1,can:1,could:1,has:1,have:1,had:1,not:1,no:1,so:1,but:1,if:1,than:1,then:1,into:1,about:1,over:1,under:1,their:1,they:1,them:1,he:1,she:1,we:1,you:1,your:1,our:1,every:1,one:1,two:1,more:1,most:1,very:1,just:1,also:1,when:1,while:1,who:1,what:1,there:1,been:1,being:1,will:1,would:1,all:1,any:1,per:1,its:1};
+var HINTS = [
+[/octopus/i,"octopus"],[/honey|bee\b|bees/i,"honey bee"],[/moon|lunar/i,"moon landing"],
+[/otter/i,"sea otter"],[/neutron star/i,"neutron star"],[/banana/i,"banana"],
+[/shark/i,"shark"],[/volcano|erupt|lava/i,"volcano eruption"],[/whale/i,"whale ocean"],
+[/elephant/i,"elephant"],[/penguin/i,"penguin"],[/jaguar|jungle|rainforest|sloth|toucan|monkey/i,"rainforest animals"],
+[/deep sea|anglerfish|trench|octopus/i,"deep sea fish"],[/astronaut|space station|rocket/i,"astronaut space"],
+[/earthquake/i,"earthquake"],[/desert|sahara/i,"sahara desert"],[/ice|antarctica|arctic|polar/i,"antarctica"],
+[/river|nile|amazon river/i,"river aerial"],[/reef|coral/i,"coral reef"],[/frog/i,"frog"],
+[/butterfly/i,"butterfly"],[/cheetah/i,"cheetah"],[/falcon|eagle|owl/i,"bird of prey"],
+[/jellyfish/i,"jellyfish"],[/turtle/i,"sea turtle"],[/dolphin/i,"dolphin"],[/solar|sun\b/i,"sun solar"],
+[/mars/i,"mars planet"],[/jupiter/i,"jupiter planet"],[/saturn/i,"saturn planet"],[/comet|asteroid|meteor/i,"comet space"],
+[/galaxy|milky way|nebula|star/i,"galaxy stars"],[/telescope/i,"telescope"],[/glacier|iceberg/i,"glacier"]
+];
+function $(id){return document.getElementById(id);}
+function esc(t){return String(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+var S = {
+  lines: [], cands: [], chosen: [], clipPaths: {}, searching:false, rendering:false,
+  bankId: null, pending: {} /* cbId -> {res,rej,onp} */, voiceReady:false,
+  subtitlesOn: (function(){ try{ return localStorage.getItem("fm_subtitles_on") !== "0"; }catch(e){ return true; } })(), /* MARKER: FACTS_SUBTITLES_TOGGLE_V1 */
+  wmOn: (function(){ try{ return localStorage.getItem("fm_wm_on") !== "0"; }catch(e){ return true; } })(),
+  wmText: (function(){ try{ return localStorage.getItem("fm_wm_text") || "@toylanddaily"; }catch(e){ return "@toylanddaily"; } })()
+  /* MARKER: FACTS_WATERMARK_V1 */
+};
+function refreshSubToggle(){
+  $("fmSubToggle").textContent = S.subtitlesOn ? "ON ✅" : "OFF ❌";
+  $("fmSubToggle").style.background = S.subtitlesOn ? "#1d9e57" : "#7a4a21";
+}
+$("fmSubToggle").onclick = function(){
+  S.subtitlesOn = !S.subtitlesOn;
+  try{ localStorage.setItem("fm_subtitles_on", S.subtitlesOn ? "1" : "0"); }catch(e){}
+  refreshSubToggle();
+};
+/* ---------- watermark settings ---------- */
+function refreshWm(){
+  $("fmWmToggle").textContent = S.wmOn ? "ON ✅" : "OFF ❌";
+  $("fmWmToggle").style.background = S.wmOn ? "#1d9e57" : "#7a4a21";
+  $("fmWmText").value = S.wmText;
+  $("fmWmText").style.opacity = S.wmOn ? "1" : "0.45";
+}
+$("fmWmToggle").onclick = function(){
+  S.wmOn = !S.wmOn;
+  try{ localStorage.setItem("fm_wm_on", S.wmOn ? "1" : "0"); }catch(e){}
+  refreshWm();
+};
+$("fmWmText").onchange = function(){
+  S.wmText = $("fmWmText").value;
+  try{ localStorage.setItem("fm_wm_text", S.wmText); }catch(e){}
+};
+function wmString(){ return (S.wmOn && S.wmText && S.wmText.trim()) ? S.wmText.trim() : ""; }
+/* ---------- used-bank tracking (kabhi repeat nahi) ---------- */
+function usedBankIds(){ /* MARKER: FACTS_USED_TRACKING_V1 */
+  try{ return JSON.parse(localStorage.getItem("fm_used_bank_ids")||"[]"); }catch(e){ return []; }
+}
+function markBankUsed(id){
+  if(!id) return;
+  var u = usedBankIds();
+  if(u.indexOf(id)<0){ u.push(id); try{ localStorage.setItem("fm_used_bank_ids", JSON.stringify(u)); }catch(e){} }
+}
+/* ---------- script helpers ---------- */
+function readLines(){
+  var raw = $("fmScript").value.split("\n").map(function(x){return x.trim();}).filter(function(x){return x.length>2;});
+  return raw;
+}
+function updateCount(){
+  var n = readLines().length;
+  $("fmLineCount").textContent = n===0 ? "" : ("Lines: " + n + " / " + MAX_LINES + (n>MAX_LINES ? " — zyada hain! Kuch lines kam karo." : " (≈ " + Math.max(1,Math.round(n*5.5/60*10)/10) + " minute ki video)"));
+  return n;
+}
+$("fmScript").addEventListener("input", updateCount);
+$("fmSampleBtn").onclick = function(){
+  S.bankId = null;
+  $("fmScript").value = SAMPLE.join("\n");
+  updateCount(); resetScenes();
+  $("fmSearchStatus").textContent = "Ready facts aa gaye. Ab Step 2 me scenes dhoondo.";
+};
+/* ---------- online bank (fresh fetch, cache-bust) ---------- */
+$("fmBankBtn").onclick = function(){
+  $("fmBankBtn").disabled = true;
+  $("fmSearchStatus").textContent = "Online bank se nayi script aa rahi hai…";
+  var url = BANK_URL + "?t=" + Date.now(); /* MARKER: FACTS_BANK_FRESH_FETCH */
+  fetch(url, {cache:"no-store"}).then(function(r){
+    if(!r.ok) throw new Error("bank server " + r.status);
+    return r.json();
+  }).then(function(bank){
+    var used = usedBankIds();
+    var free = (bank.scripts||[]).filter(function(s){ return used.indexOf(s.id)<0; });
+    if(!free.length){
+      $("fmSearchStatus").innerHTML = "<span class='fm-err'>Saari scripts istemal ho chuki hain — nayi scripts jald ayengi. Tab tak apni script likh kar bana sakte ho.</span>";
+      return;
+    }
+    var pick = free[Math.floor(Math.random()*free.length)];
+    S.bankId = pick.id;
+    $("fmScript").value = pick.lines.join("\n");
+    updateCount(); resetScenes();
+    $("fmSearchStatus").textContent = "📥 Bank script: “" + pick.title + "” (" + pick.lines.length + " lines). Ab Step 2 me scenes dhoondo.";
+  }).catch(function(e){
+    $("fmSearchStatus").innerHTML = "<span class='fm-err'>Bank se script nahi aa saki (net check karo): " + esc(e.message) + "</span>";
+  }).finally(function(){ $("fmBankBtn").disabled = false; });
+};
+/* ---------- keyword extraction ---------- */
+function keywords(line){
+  for(var i=0;i<HINTS.length;i++){ if(HINTS[i][0].test(line)) return HINTS[i][1]; }
+  var words = line.toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(function(w){ return w.length>2 && !STOP[w]; });
+  words.sort(function(a,b){ return b.length-a.length; });
+  return words.slice(0,3).join(" ") || line;
+}
+/* ---------- scene search ---------- */
+function resetScenes(){ S.cands=[]; S.chosen=[]; S.clipPaths={}; $("fmScenes").innerHTML=""; }
+function commonsSearch(q){
+  var u = "https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=" +
+    encodeURIComponent(q + " filetype:video") + "&gsrnamespace=6&gsrlimit=8&prop=imageinfo&iiprop=" +
+    encodeURIComponent("url|size|mime") + "&iiurlwidth=340";
+  return fetch(u).then(function(r){ return r.json(); }).then(function(d){
+    var pages = (d.query && d.query.pages) || {};
+    var out = [];
+    Object.keys(pages).forEach(function(k){
+      var p = pages[k], ii = (p.imageinfo||[])[0];
+      if(!ii || !ii.url) return;
+      if(ii.size && ii.size > 160*1024*1024) return;
+      out.push({src:"Wikimedia", title:p.title.replace(/^File:/,""), url:ii.url.split("?")[0], thumb:ii.thumburl||""});
+    });
+    return out;
+  });
+}
+function nasaSearch(q){
+  var u = "https://images-api.nasa.gov/search?q=" + encodeURIComponent(q) + "&media_type=video&page_size=4";
+  return fetch(u).then(function(r){ return r.json(); }).then(function(d){
+    var items = ((d.collection||{}).items||[]).slice(0,3);
+    var jobs = items.map(function(it){
+      var href = it.href;
+      return fetch(href).then(function(r){ return r.json(); }).then(function(files){
+        var order = ["~medium.mp4","~large.mp4","~small.mp4","~mobile.mp4","~orig.mp4"];
+        for(var i=0;i<order.length;i++){
+          var hit = files.filter(function(f){ return String(f).toLowerCase().endsWith(order[i]); })[0];
+          if(hit){
+            var t = ((it.data||[])[0]||{}).title || "NASA video";
+            var th = ((it.links||[])[0]||{}).href || "";
+            return {src:"NASA", title:t, url:String(hit).replace(/^http:\/\//,"https://"), thumb:th};
+          }
+        }
+        return null;
+      }).catch(function(){ return null; });
+    });
+    return Promise.all(jobs).then(function(a){ return a.filter(Boolean); });
+  }).catch(function(){ return []; });
+}
+function renderScenes(){
+  var box = $("fmScenes"); box.innerHTML = "";
+  S.lines.forEach(function(line, i){
+    var c = (S.cands[i]||[])[S.chosen[i]||0];
+    var div = document.createElement("div");
+    div.className = "fm-scene" + (c ? "" : " bad");
+    div.innerHTML =
+      (c && c.thumb ? "<img src='" + esc(c.thumb) + "' alt=''>" : "<img alt=''>") +
+      "<div class='fm-grow'><div class='fm-line'>" + (i+1) + ". " + esc(line) + "</div>" +
+      "<div class='fm-meta'>" + (c ? esc(c.src) + " • " + esc(c.title) : "❌ Scene nahi mila — line badlo ya dobara dhoondo") + "</div></div>" +
+      (c ? "<button class='fm-mini' data-badlo='" + i + "'>Badlo</button>" : "");
+    box.appendChild(div);
+  });
+  box.querySelectorAll("[data-badlo]").forEach(function(b){
+    b.onclick = function(){
+      var i = +b.getAttribute("data-badlo");
+      S.chosen[i] = ((S.chosen[i]||0) + 1) % (S.cands[i]||[]).length;
+      delete S.clipPaths[i];
+      renderScenes();
+    };
+  });
+}
+$("fmSearchBtn").onclick = function(){
+  if(S.searching) return;
+  S.lines = readLines();
+  if(!S.lines.length){ $("fmSearchStatus").textContent = "Pehle script likho ya bank se lo."; return; }
+  if(S.lines.length > MAX_LINES){ $("fmSearchStatus").textContent = "Script " + MAX_LINES + " lines se lambi hai — kam karo."; return; }
+  S.searching = true; $("fmSearchBtn").disabled = true;
+  S.cands = []; S.chosen = []; S.clipPaths = {};
+  var i = 0;
+  function next(){
+    if(i >= S.lines.length){
+      S.searching = false; $("fmSearchBtn").disabled = false;
+      var missing = S.cands.filter(function(c){ return !c.length; }).length;
+      $("fmSearchStatus").innerHTML = missing===0
+        ? "<span class='fm-ok'>✅ Saari " + S.lines.length + " lines ke scenes mil gaye. Ab VIDEO BANAO dabao.</span>"
+        : "<span class='fm-err'>" + missing + " line(s) ka scene nahi mila (laal wali). Un lines ko badal kar dobara dhoondo — video adhoori nahi banegi.</span>";
+      renderScenes();
+      return;
+    }
+    var line = S.lines[i];
+    $("fmSearchStatus").textContent = "🔍 Line " + (i+1) + " / " + S.lines.length + " ka scene dhoondh raha hon…";
+    var q = keywords(line);
+    commonsSearch(q).then(function(list){
+      if(list.length) return list;
+      return nasaSearch(q);
+    }).then(function(list){
+      S.cands[i] = list; S.chosen[i] = 0; i++; renderScenes(); next();
+    }).catch(function(){
+      S.cands[i] = []; S.chosen[i] = 0; i++; renderScenes(); next();
+    });
+  }
+  next();
+};
+/* ---------- bridge promise helpers ---------- */
+var cbSeq = 0;
+function bridgeCall(register){
+  return new Promise(function(res, rej){
+    var id = "cb" + (++cbSeq) + "_" + Date.now();
+    S.pending[id] = {res:res, rej:rej};
+    register(id);
+  });
+}
+window.onFactsProgress = function(id, pct, msg){
+  if(S.renderPhase === id){
+    $("fmRenderProg").style.display = "block";
+    $("fmRenderProg").firstElementChild.style.width = pct + "%";
+    $("fmRenderStatus").textContent = "🎬 " + pct + "% — " + (msg||"");
+  }
+};
+window.onFactsDownloadDone = function(id, path){
+  var p = S.pending[id]; if(p){ delete S.pending[id]; p.res(path); }
+};
+window.onFactsRenderDone = function(id, path){
+  var p = S.pending[id]; if(p){ delete S.pending[id]; p.res(path); }
+};
+window.onFactsFailed = function(id, stage, reason){
+  var p = S.pending[id]; if(p){ delete S.pending[id]; p.rej(new Error(stage + ": " + reason)); }
+};
+/* ---------- neural voice callbacks ---------- */
+var neuralPending = {};
+window.onNeuralTTSDone = function(id, dataUri){
+  var p = neuralPending[id]; if(p){ delete neuralPending[id]; p.res(dataUri); }
+};
+window.onNeuralTTSFailed = function(id, reason){
+  var p = neuralPending[id]; if(p){ delete neuralPending[id]; p.rej(new Error("awaz fail: " + reason)); }
+};
+window.onNeuralDownloadProgress = function(pct){
+  $("fmVoiceProg").style.display = "block";
+  $("fmVoiceProg").firstElementChild.style.width = pct + "%";
+  $("fmVoiceStatus").textContent = "Awaz pack download ho raha hai… " + pct + "%";
+};
+window.onNeuralDownloadDone = function(){
+  S.voiceReady = true;
+  $("fmVoiceProg").style.display = "none";
+  $("fmPackBtn").style.display = "none";
+  $("fmVoiceStatus").innerHTML = "<span class='fm-ok'>✅ Awaz tayyar hai.</span>";
+};
+window.onNeuralDownloadFailed = function(reason){
+  $("fmVoiceProg").style.display = "none";
+  $("fmVoiceStatus").innerHTML = "<span class='fm-err'>Awaz pack download fail: " + esc(reason) + " — dobara dabao, resume ho jayega.</span>";
+  $("fmPackBtn").style.display = "block";
+};
+function refreshVoice(){
+  try{
+    if(window.HamzaNeuralTTS && HamzaNeuralTTS.isModelReady()){
+      S.voiceReady = true;
+      $("fmVoiceStatus").innerHTML = "<span class='fm-ok'>✅ Awaz tayyar hai.</span>";
+      $("fmPackBtn").style.display = "none";
+    } else {
+      $("fmVoiceStatus").textContent = "Awaz ke liye pehli dafa pack download karna hai (~126 MB).";
+      $("fmPackBtn").style.display = "block";
+    }
+  }catch(e){
+    $("fmVoiceStatus").textContent = "Awaz engine load ho raha hai…";
+    $("fmPackBtn").style.display = "block";
+  }
+}
+$("fmPackBtn").onclick = function(){
+  try{ HamzaNeuralTTS.downloadModel(); }catch(e){ $("fmVoiceStatus").textContent = "Download shuru nahi ho saka: " + e.message; }
+};
+function speakLine(text, idx){
+  return new Promise(function(res, rej){
+    var id = "L" + idx + "_" + Date.now();
+    neuralPending[id] = {res:res, rej:rej};
+    try{ HamzaNeuralTTS.synthesize(id, text, "en", 3, 1.0); }
+    catch(e){ delete neuralPending[id]; rej(e); return; }
+    setTimeout(function(){ if(neuralPending[id]){ delete neuralPending[id]; rej(new Error("awaz timeout (line " + (idx+1) + ")")); } }, 180000);
+  });
+}
+/* ---------- render ---------- */
+function fmtSrtTime(ms){
+  function p(n, l){ n = String(n); while(n.length < (l||2)) n = "0" + n; return n; }
+  var h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000), s = Math.floor(ms%60000/1000), x = Math.floor(ms%1000);
+  return p(h) + ":" + p(m) + ":" + p(s) + "," + p(x,3);
+}
+$("fmRenderBtn").onclick = function(){
+  if(S.rendering) return;
+  S.lines = readLines();
+  if(!S.lines.length){ $("fmRenderStatus").textContent = "Pehle script chahiye."; return; }
+  if(S.lines.length > MAX_LINES){ $("fmRenderStatus").textContent = "Script " + MAX_LINES + " lines se lambi hai."; return; }
+  if(!S.voiceReady && !(window.HamzaNeuralTTS && HamzaNeuralTTS.isModelReady())){
+    $("fmRenderStatus").innerHTML = "<span class='fm-err'>Pehle upar se Awaz Pack download karo (Step 0).</span>";
+    window.scrollTo(0,0); return;
+  }
+  var missing = [];
+  S.lines.forEach(function(l, i){ if(!(S.cands[i]||[]).length) missing.push(i+1); });
+  if(missing.length){
+    $("fmRenderStatus").innerHTML = "<span class='fm-err'>Line " + missing.join(", ") + " ka scene nahi mila. Pehle Step 2 me scenes dhoondo — adhoori video nahi banegi.</span>";
+    return;
+  }
+  S.rendering = true; $("fmRenderBtn").disabled = true;
+  $("fmResult").innerHTML = "";
+  var total = S.lines.length;
+  var segs = [], srt = [], clock = 0;
+  var chain = Promise.resolve();
+  S.lines.forEach(function(line, i){
+    chain = chain.then(function(){
+      var cand = S.cands[i][S.chosen[i]||0];
+      var base = Math.round(i/total*70);
+      $("fmRenderProg").style.display = "block";
+      $("fmRenderProg").firstElementChild.style.width = base + "%";
+      var ext = cand.url.toLowerCase().indexOf(".webm")>=0 ? ".webm" : ".mp4";
+      var name = "clip" + i + ext;
+      var dl = S.clipPaths[i]
+        ? Promise.resolve(S.clipPaths[i])
+        : bridgeCall(function(id){
+            S.renderPhase = id;
+            window._fmDlPct = function(pct){};
+            FactsBridge.downloadAsync(cand.url, name, id);
+          }).then(function(path){ S.clipPaths[i] = path; return path; });
+      $("fmRenderStatus").textContent = "⬇️ Line " + (i+1) + " / " + total + " — clip download ho raha hai…";
+      return dl.then(function(clipPath){
+        $("fmRenderStatus").textContent = "🗣️ Line " + (i+1) + " / " + total + " — awaz ban rahi hai…";
+        return speakLine(line, i).then(function(dataUri){
+          var wavPath = FactsBridge.saveAudioBase64(dataUri, "line" + (i+1) + ".wav");
+          if(!wavPath) throw new Error("awaz save nahi ho saki (line " + (i+1) + ")");
+          var durMs = 0;
+          try{ durMs = FactsBridge.probeDurationMs(wavPath) || 0; }catch(e){}
+          if(durMs > 0){
+            if(S.subtitlesOn){
+              srt.push((i+1) + "\n" + fmtSrtTime(clock) + " --> " + fmtSrtTime(clock + durMs) + "\n" + line + "\n");
+            }
+            clock += durMs + 350;
+          }
+          /* Subtitles OFF -> caption khaali -> engine koi likhai nahi jalata */
+          segs.push({clip: clipPath, audio: wavPath, caption: S.subtitlesOn ? line : "", wm: wmString()});
+        });
+      });
+    });
+  });
+  chain.then(function(){
+    var stamp = new Date();
+    var fname = "MeerFacts_" + stamp.getFullYear() + "" + (stamp.getMonth()+1) + "" + stamp.getDate() + "_" + stamp.getHours() + "" + stamp.getMinutes() + "" + stamp.getSeconds() + ".mp4";
+    return bridgeCall(function(id){
+      S.renderPhase = id;
+      FactsBridge.renderAsync(JSON.stringify(segs), fname, id);
+    }).then(function(outPath){
+      /* Watermark asal me laga ya nahi — engine ka pixel-count check (dead toggle kabhi nahi) */
+      var wmCount = null, oi = outPath.indexOf("|wm=");
+      if(oi >= 0){ wmCount = parseInt(outPath.substring(oi + 5), 10); outPath = outPath.substring(0, oi); }
+      var wmWanted = wmString() !== "";
+      var wmOk = !wmWanted || (wmCount !== null && wmCount > 0);
+      if(srt.length && S.subtitlesOn){
+        try{ FactsBridge.saveTextFile(fname.replace(/\.mp4$/, ".srt"), srt.join("\n")); }catch(e){}
+      }
+      if(wmOk){ markBankUsed(S.bankId); } /* watermark fail ho to bank script used NAHI — dobara mauqa */
+      S.bankId = null;
+      $("fmRenderProg").firstElementChild.style.width = "100%";
+      if(wmOk){
+        $("fmRenderStatus").innerHTML = "<span class='fm-ok'>✅ Video tayyar hai!</span>" + (wmWanted ? "\n💧 Watermark bhi laga hai (check ho gaya)." : "") + "\n📁 " + esc(outPath) + "\n(Gallery me Movies/MeerFacts me bhi save ho gayi hai)";
+      } else {
+        $("fmRenderStatus").innerHTML = "<span class='fm-err'>⚠️ Video ban gayi LEKIN watermark nahi laga — ye video watermark wali mat samjho. Dobara VIDEO BANAO dabao.</span>\n📁 " + esc(outPath);
+      }
+      $("fmResult").innerHTML =
+        "<video controls playsinline src='file://" + esc(outPath) + "'></video>" +
+        "<button class='fm-btn' id='fmShareBtn'>📤 Video Share Karo</button>";
+      $("fmShareBtn").onclick = function(){ FactsBridge.shareVideo(outPath); };
+    });
+  }).catch(function(e){
+    $("fmRenderStatus").innerHTML = "<span class='fm-err'>❌ Video nahi bani: " + esc(e.message) + "\nDobara koshish karo — bani hui lines dobara download nahi hongi.</span>";
+  }).finally(function(){
+    S.rendering = false; $("fmRenderBtn").disabled = false; S.renderPhase = null;
+  });
+};
+refreshVoice();
+refreshSubToggle();
+refreshWm();
+updateCount();
+})();
+</script>
+<!-- ═══════════════ FACTS MODULE — END ═══════════════ -->
+</body>
+</html>
