@@ -1,0 +1,29 @@
+plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
+
+android {
+    namespace 'com.hamza.factsmaker'
+    compileSdk 34
+    defaultConfig {
+        applicationId "com.hamza.factsmaker"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' }
+    }
+    buildTypes {
+        debug { signingConfig signingConfigs.debug }
+        release { signingConfig signingConfigs.debug; minifyEnabled false }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.12.0'
+    implementation files('libs/sherpa-onnx-2.0.1.aar')
+    implementation 'org.apache.commons:commons-compress:1.26.2'
+}
